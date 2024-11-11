@@ -2,7 +2,7 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from .models import TheatreHall, Actor, Genre, Play, Performance, Reservation, Ticket
+from theatre.models import TheatreHall, Actor, Genre, Play, Performance, Reservation, Ticket
 
 
 class TheatreHallSerializer(serializers.ModelSerializer):
@@ -131,24 +131,31 @@ class ReservationListSerializer(serializers.ModelSerializer):
 
 
 class ReservationSerializer(serializers.ModelSerializer):
-    tickets = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=Ticket.objects.all()
-    )
+    tickets = serializers.PrimaryKeyRelatedField(many=True, queryset=Ticket.objects.all())
+    performance = serializers.PrimaryKeyRelatedField(queryset=Performance.objects.all())
 
     class Meta:
         model = Reservation
-        fields = ("tickets", "created_at")
+        fields = ["id", "user", "performance", "tickets"]
+
 
     def create(self, validated_data):
         user = self.context["request"].user
         tickets_data = validated_data.pop("tickets")
+        performance = validated_data.pop("performance")
+
         tickets = Ticket.objects.filter(id__in=[ticket.id for ticket in tickets_data])
+        for ticket in tickets:
+            if ticket.performance != performance:
+                raise serializers.ValidationError("All tickets must be for the same performance.")
 
         with transaction.atomic():
             reservation = Reservation.objects.create(user=user)
             for ticket in tickets:
                 ticket.reservation = reservation
+                ticket.performance = performance
                 ticket.full_clean()
                 ticket.save()
 
         return reservation
+

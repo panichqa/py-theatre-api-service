@@ -1,15 +1,13 @@
 import pathlib
 import uuid
 from typing import Type
-
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
 from django.db.models import UniqueConstraint
 from django.utils import timezone
 from django.utils.text import slugify
-from django.utils.timezone import make_aware
-from datetime import datetime
+
 
 class TheatreHall(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -50,7 +48,6 @@ class Play(models.Model):
     actors = models.ManyToManyField(Actor, related_name="plays", blank=True)
     genres = models.ManyToManyField(Genre, related_name="plays", blank=True)
 
-
     def __str__(self):
         return self.title
 
@@ -60,8 +57,8 @@ def movie_image_path(instance, filename) -> pathlib.Path:
 
 
 class Performance(models.Model):
-    play = models.ForeignKey(Play, on_delete=models.CASCADE)
-    theatre_hall = models.ForeignKey(TheatreHall, on_delete=models.CASCADE)
+    play = models.ForeignKey(Play, on_delete=models.CASCADE, related_name="performances")
+    theatre_hall = models.ForeignKey(TheatreHall, on_delete=models.CASCADE, related_name="performances")
     show_time = models.DateTimeField()
     image = models.ImageField(null=True, upload_to=movie_image_path)
 
@@ -80,7 +77,8 @@ class Performance(models.Model):
 
 class Reservation(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reservations")
+    performance = models.ForeignKey(Performance, on_delete=models.CASCADE, related_name="reservations")
 
 
 class Ticket(models.Model):

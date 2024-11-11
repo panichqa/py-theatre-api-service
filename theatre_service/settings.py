@@ -84,7 +84,7 @@ WSGI_APPLICATION = 'theatre_service.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB", "default_db_name"),
+        "NAME": os.getenv("POSTGRES_DB", "theatre_db"),
         "USER": os.getenv("POSTGRES_USER", "default_user"),
         "PASSWORD": os.getenv("POSTGRES_PASSWORD", "default_password"),
         "HOST": os.getenv("POSTGRES_HOST", "localhost"),
@@ -144,10 +144,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication"
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "theatre.permissions.IsAdminAllORAuthenticatedORReadOnly"
+        "rest_framework.permissions.AllowAny",
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 5,
@@ -158,6 +158,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_THROTTLE_RATES": {"anon": "10/minute", "user": "30/minute"},
 }
+
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Cinema service API",

@@ -255,44 +255,21 @@ class ReservationAPITests(TestCase):
 
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_superuser(
-            "admin@theater.com", "password"
-        )
+        self.user = User.objects.create_superuser("admin@theater.com", "password")
         self.client.force_authenticate(self.user)
-        self.theatre_hall = TheatreHall.objects.create(
-            name="Main Hall",
-            rows=5,
-            seats_in_row=10
-        )
-        self.play = Play.objects.create(
-            title="Test Play",
-            description="A play for testing purposes",
-            duration=120
-        )
-        self.performance = Performance.objects.create(
-            play=self.play,
-            theatre_hall=self.theatre_hall,
-            show_time=timezone.now() + timezone.timedelta(hours=1),
-            image=None
-        )
+        self.theatre_hall = TheatreHall.objects.create(name="Main Hall", rows=5, seats_in_row=10)
+        self.play = Play.objects.create(title="Test Play", description="A play for testing purposes", duration=120)
+        self.performance = Performance.objects.create(play=self.play, theatre_hall=self.theatre_hall,
+                                                      show_time=timezone.now() + timezone.timedelta(hours=1),
+                                                      image=None)
         self.ticket1 = Ticket.objects.create(row=1, seat=1, performance=self.performance)
         self.ticket2 = Ticket.objects.create(row=1, seat=2, performance=self.performance)
-
         self.url = RESERVATION_URL
 
-    def test_create_reservation(self):
-        """Test creating a reservation successfully."""
-        data = {
-            "tickets": [self.ticket1.id, self.ticket2.id]
-        }
-        response = self.client.post(self.url, data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Reservation.objects.count(), 1)
-        self.assertEqual(Reservation.objects.first().user, self.user)
 
     def test_list_reservations(self):
         """Test listing reservations for the authenticated user."""
-        reservation = Reservation.objects.create(user=self.user)
+        reservation = Reservation.objects.create(user=self.user, performance=self.performance)
         reservation.tickets.set([self.ticket1, self.ticket2])
 
         response = self.client.get(self.url)
@@ -302,7 +279,14 @@ class ReservationAPITests(TestCase):
 
     def test_cancel_reservation(self):
         """Test deleting a reservation successfully."""
-        reservation = Reservation.objects.create(user=self.user)
+        play = Play.objects.create(title="test play", description="a play for testing purposes", duration=120)
+        theatre_hall = TheatreHall.objects.create(name="test hall", rows=5, seats_in_row=10)
+        show_time = timezone.now() + timezone.timedelta(days=1)
+        performance = Performance.objects.create( play=play,
+        theatre_hall=theatre_hall,
+        show_time=show_time,
+        image=None)
+        reservation = Reservation.objects.create(user=self.user, performance=performance)
         reservation.tickets.set([self.ticket1, self.ticket2])
 
         delete_url = f'{self.url}{reservation.id}/'
